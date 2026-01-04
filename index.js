@@ -26,7 +26,6 @@ async function startServer() {
 
     const server = new ApolloServer({
         schema,
-        playground: true,
         introspection: true,
         tracing: true,
         cacheControl: true,
@@ -39,7 +38,16 @@ async function startServer() {
         context: async () => {
             const pgClient = await pgPool.connect();
             return { pgClient };
-        }
+        },
+        plugins: [{
+            async requestDidStart() {
+                return {
+                    async willSendResponse({ context }) {
+                        if (context.pgClient) context.pgClient.release();
+                    }
+                };
+            }
+        }]
     })
     await server.start()
     server.applyMiddleware({ app, path: '/graphql' })
