@@ -17,33 +17,26 @@ async function startServer() {
         }
     });
 
-    const schema = await createPostGraphQLSchema(pgPool, 'public', {
-        watchPg: true,
-        graphiql: true,
-        enhanceGraphiql: true,
-        dynamicJson: true
-    });
+    const schema = await createPostGraphQLSchema(pgPool, 'public');
 
     const server = new ApolloServer({
         schema,
-        introspection: true,
-        tracing: true,
-        cacheControl: true,
-        formatError: (error) => {
-            return error;
-        },
-        formatResponse: (response) => {
-            return response;
-        },
         context: async () => {
             const pgClient = await pgPool.connect();
+            await pgClient.query('BEGIN');
             return { pgClient };
         },
         plugins: [{
             async requestDidStart() {
                 return {
-                    async willSendResponse({ context }) {
-                        if (context.pgClient) context.pgClient.release();
+                    async willSendResponse({ context, errors }) {
+                        if (context.pgClient) {
+                            try {
+                                await context.pgClient.query(errors ? 'ROLLBACK' : 'COMMIT');
+                            } finally {
+                                context.pgClient.release();
+                            }
+                        }
                     }
                 };
             }
