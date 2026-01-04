@@ -1,36 +1,51 @@
 import express from 'express';
-import { postgraphile } from 'postgraphile';
+import { createPostGraphQLSchema } from 'postgraphile';
 import fs from 'fs';
 import dotenv from 'dotenv'
+import { ApolloServer } from 'apollo-server-express';
+import pg from 'pg';
 dotenv.config()
 
 const app = express();
-const connectionString = process.env.CONNECTION_STRING
 
-app.use(postgraphile(
-    {
-        connectionString,
+async function startServer() {
+    const pgPool = new pg.Pool({
+        connectionString: process.env.CONNECTION_STRING,
         ssl: {
-            ca: fs.readFileSync('./CA.pem'),
+            ca: fs.readFileSync('./CA.pem').toString(),
             rejectUnauthorized: true
         }
-    },
-    'public',
-    {
+    });
+
+    const schema = await createPostGraphQLSchema(pgPool, 'public', {
+        watchPg: true,
         graphiql: true,
         enhanceGraphiql: true,
-        watchPg: false,
-        dynamicJson: true,
-        ownerConnectionString: {
-            connectionString,
-            ssl: {
-                ca: fs.readFileSync('./CA.pem'),
-                rejectUnauthorized: true
-            }
-        }
-    }
-));
+        dynamicJson: true
+    });
 
-app.listen(5000, () => {
-    console.log('server running on 5000/graphiql');
-});
+    const server = new ApolloServer({
+        schema,
+        playground: true,
+        introspection: true,
+        tracing: true,
+        cacheControl: true,
+        formatError: (error) => {
+            return error;
+        },
+        formatResponse: (response) => {
+            return response;
+        },
+        context: async () => {
+            const pgClient = await pgPool.connect();
+            return { pgClient };
+        }
+    })
+    await server.start()
+    server.applyMiddleware({ app, path: '/graphql' })
+    app.listen(5000, () => {
+        console.log('server running on http://localhost:5000/graphql');
+    });
+}
+
+startServer().catch(console.error)
