@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { createPostGraphQLSchema } from 'postgraphile';
 import fs from 'fs';
@@ -21,6 +22,7 @@ async function startServer() {
 
     const server = new ApolloServer({
         schema,
+        persistedQueries: false,  // Added: Disable persisted queries to prevent DoS vulnerability
         context: async () => {
             const pgClient = await pgPool.connect();
             await pgClient.query('BEGIN');
