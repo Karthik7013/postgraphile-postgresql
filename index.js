@@ -17,7 +17,7 @@ async function startServer() {
         }
     });
 
-    const schema = await createPostGraphQLSchema(pgPool, 'public');
+    const schema = await createPostGraphQLSchema(pgPool, ['contact_management','user_management']);
 
     const server = new ApolloServer({
         schema,
