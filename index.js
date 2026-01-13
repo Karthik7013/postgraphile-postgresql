@@ -8,6 +8,11 @@ dotenv.config()
 
 const app = express();
 
+// Example health check
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 async function startServer() {
     const pgPool = new pg.Pool({
         connectionString: process.env.CONNECTION_STRING,
