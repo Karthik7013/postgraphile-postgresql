@@ -2,7 +2,7 @@
 
 This project implements a GraphQL API using Express, Apollo Server, and PostGraphile. It automatically generates a GraphQL schema based on your PostgreSQL database schema and serves it via Apollo Server.
 
-## Live Demo
+ 🟢 Live Demo
 
 You can access the deployed GraphQL Playground here:  
 [https://postgraphile-postgresql.onrender.com/graphql](https://postgraphile-postgresql.onrender.com/graphql)
