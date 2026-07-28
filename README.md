@@ -47,7 +47,7 @@ You can access the deployed GraphQL Playground here:
 Start the application:
 
 ```bash
-node index.js
+node src/index.js
 ```
 
 The server will start locally on port 5000. You can access the endpoint at http://localhost:5000/graphql.
