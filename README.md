@@ -15,6 +15,9 @@ You can access the deployed GraphQL Playground here:
   - `BEGIN` on request start.
   - `COMMIT` on success.
   - `ROLLBACK` if errors occur.
+- **JWT Authentication**: Sign in via `POST /auth/signin` to receive a JWT. Pass it in the `Authorization: Bearer <token>` header on GraphQL requests.
+- **Role-Based Authorization**: Centralized access control managed via `user_management` schema tables (`users`, `roles`, `permissions`, `user_roles`, `role_permissions`).
+- **PostgreSQL Row Level Security (RLS)**: Database-enforced row-level access control using session variables set per request.
 - **Secure Database Connection**: Configured to connect to the database using SSL with a custom CA certificate.
 
 ## Prerequisites
@@ -32,15 +35,26 @@ You can access the deployed GraphQL Playground here:
 
 2. **Environment Configuration**
 
-   Create a `.env` file in the root directory containing your database connection string:
+   Create a `.env` file in the root directory containing your database connection string and JWT secret:
 
    ```env
    CONNECTION_STRING=postgres://username:password@hostname:port/dbname
+   JWT_SECRET=your-strong-random-secret
+   JWT_EXPIRY=1h
    ```
 
 3. **SSL Certificate**
 
    Ensure you have a `CA.pem` file in the root directory. This file is required by the application to establish a secure SSL connection to your PostgreSQL instance.
+
+4. **Database Migrations**
+
+   Run migrations to create auth tables and enable RLS:
+
+   ```bash
+   psql "$CONNECTION_STRING" -f migrations/001_create_auth_tables.sql
+   psql "$CONNECTION_STRING" -f migrations/002_enable_rls.sql
+   ```
 
 ## Running the Server
 
@@ -51,3 +65,36 @@ node src/index.js
 ```
 
 The server will start locally on port 5000. You can access the endpoint at http://localhost:5000/graphql.
+
+## Authentication Flow
+
+1. **Sign In**
+
+   ```bash
+   curl -X POST http://localhost:5000/auth/signin \
+     -H "Content-Type: application/json" \
+     -d '{"email":"user@example.com","password":"password"}'
+   ```
+
+   Response:
+   ```json
+   {
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "user": {
+       "id": 1,
+       "email": "user@example.com",
+       "roles": []
+     }
+   }
+   ```
+
+2. **GraphQL Requests**
+
+   Pass the JWT in the `Authorization` header:
+
+   ```bash
+   curl -X POST http://localhost:5000/graphql \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{"query":"{ contacts { id } }"}'
+   ```
