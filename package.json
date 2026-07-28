@@ -23,8 +23,9 @@
   "scripts": {
     "build": "echo 'No build step required'",
     "migrate:latest": "knex migrate:latest",
-    "migrate:rollback": "knex migrate:rollback",
     "migrate:make": "knex migrate:make",
+    "seed:run": "knex seed:run",
+    "seed:make": "knex seed:make",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

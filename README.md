@@ -55,6 +55,23 @@ You can access the deployed GraphQL Playground here:
    npm run migrate:latest
    ```
 
+5. **Initial Seed**
+
+   Seed the default admin user and basic roles/permissions:
+
+   ```bash
+   npm run seed:run
+   ```
+
+   Default admin credentials:
+   - Email: `admin@example.com`
+   - Password: `Admin@123`
+
+   You can override them with environment variables:
+   ```bash
+   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=YourPassword123 npm run seed:run
+   ```
+
 ## Running the Server
 
 Start the application:
@@ -64,6 +81,20 @@ node src/index.js
 ```
 
 The server will start locally on port 5000. You can access the endpoint at http://localhost:5000/graphql.
+
+## Roles and Permissions
+
+The auth schema is intentionally **not exposed via GraphQL**. Initial data is seeded via Knex. The admin user can manage roles and permissions through direct SQL or by extending the seed system.
+
+### Predefined Roles
+
+- `admin` — full access (`contact:create`, `contact:read`, `contact:update`, `contact:delete`, `role:*`, `user:*`)
+- `user` — limited read-only access (`contact:read`, `role:read`, `user:read`)
+- `guest` — no permissions by default
+
+### Guest Access
+
+Unauthenticated requests are allowed. RLS policies enforce what anonymous users can access. By default, unauthenticated users have no user context and will only see rows permitted by guest-level policies.
 
 ## Authentication Flow
 
