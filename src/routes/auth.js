@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import pg from 'pg';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -10,7 +11,7 @@ const router = express.Router();
 const pool = new pg.Pool({
   connectionString: process.env.CONNECTION_STRING,
   ssl: {
-    ca: require('fs').readFileSync('./CA.pem').toString(),
+    ca: fs.readFileSync('./CA.pem').toString(),
     rejectUnauthorized: true
   }
 });

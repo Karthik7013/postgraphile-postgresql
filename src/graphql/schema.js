@@ -1,5 +1,6 @@
 import { createPostGraphQLSchema } from 'postgraphile';
 
 export async function buildSchema(pgPool) {
-  return await createPostGraphQLSchema(pgPool, ['contact_management', 'user_management']);
+  const schemas = (process.env.GRAPHQL_SCHEMAS || 'contact_management').split(',').map(s => s.trim()).filter(Boolean);
+  return await createPostGraphQLSchema(pgPool, schemas);
 }

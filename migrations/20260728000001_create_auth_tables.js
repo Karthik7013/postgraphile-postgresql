@@ -1,16 +1,4 @@
-const { wrapIdentifier, postgresSchema } = require('knex');
-
-function applySchema(tableName) {
-  if (tableName.startsWith('user_management.')) {
-    return tableName;
-  }
-  if (tableName.startsWith('contact_management.')) {
-    return tableName;
-  }
-  return `user_management.${tableName}`;
-}
-
-exports.up = function (knex) {
+export async function up(knex) {
   return knex.schema
     .withSchema('user_management')
     .createTable('users', table => {
@@ -45,9 +33,9 @@ exports.up = function (knex) {
       table.foreign('permission_id').references('id').inTable('user_management.permissions').onDelete('CASCADE');
     })
     .raw('CREATE INDEX IF NOT EXISTS idx_users_email ON user_management.users(email)');
-};
+}
 
-exports.down = function (knex) {
+export async function down(knex) {
   return knex.schema
     .withSchema('user_management')
     .dropTable('role_permissions')
@@ -55,4 +43,4 @@ exports.down = function (knex) {
     .dropTable('permissions')
     .dropTable('roles')
     .dropTable('users');
-};
+}

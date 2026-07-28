@@ -1,4 +1,4 @@
-exports.up = function (knex) {
+export async function up(knex) {
   return knex.schema
     .alterTable('contact_management.contacts', table => {
       table.enableRowLevelSecurity();
@@ -16,9 +16,9 @@ exports.up = function (knex) {
         FOR ALL TO PUBLIC
         USING (owner_id = app.current_user_id::bigint)
     `);
-};
+}
 
-exports.down = function (knex) {
+export async function down(knex) {
   return knex.schema
     .raw('DROP POLICY IF EXISTS contact_ownership ON contact_management.contacts')
     .raw('DROP POLICY IF EXISTS note_ownership ON contact_management.notes')
@@ -28,4 +28,4 @@ exports.down = function (knex) {
     .alterTable('contact_management.notes', table => {
       table.disableRowLevelSecurity();
     });
-};
+}

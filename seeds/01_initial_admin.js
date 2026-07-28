@@ -1,9 +1,12 @@
-const bcrypt = require('bcrypt');
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
 
-exports.seed = async function (knex) {
+export async function seed(knex) {
   await knex('user_management.role_permissions').del();
   await knex('user_management.user_roles').del();
   await knex('user_management.permissions').del();
@@ -33,7 +36,10 @@ exports.seed = async function (knex) {
     { name: 'user:create', description: 'Create users' },
     { name: 'user:read', description: 'Read users' },
     { name: 'user:update', description: 'Update users' },
-    { name: 'user:delete', description: 'Delete users' }
+    { name: 'user:delete', description: 'Delete users' },
+    { name: 'schema:grant', description: 'Grant schema access to roles' },
+    { name: 'table:permission', description: 'Manage table permissions for roles' },
+    { name: 'rls:manage', description: 'Manage RLS policies' }
   ];
 
   for (const perm of allPermissions) {
@@ -53,4 +59,21 @@ exports.seed = async function (knex) {
       await knex('user_management.role_permissions').insert({ role_id: userRole.id, permission_id: permRow.id });
     }
   }
-};
+
+  await knex('user_management.schema_grants').insert([
+    { role_id: adminRole.id, schema_name: 'contact_management', allowed: true },
+    { role_id: adminRole.id, schema_name: 'user_management', allowed: true },
+    { role_id: userRole.id, schema_name: 'contact_management', allowed: true },
+    { role_id: guestRole.id, schema_name: 'contact_management', allowed: true }
+  ]);
+
+  const contactsPerms = await knex('user_management.permissions').whereIn('name', ['contact:create', 'contact:read', 'contact:update', 'contact:delete']).returning('id');
+  for (const perm of contactsPerms) {
+    await knex('user_management.role_permissions').insert({ role_id: adminRole.id, permission_id: perm.id });
+  }
+  const readContactPerms = await knex('user_management.permissions').whereIn('name', ['contact:read']).returning('id');
+  for (const perm of readContactPerms) {
+    await knex('user_management.role_permissions').insert({ role_id: userRole.id, permission_id: perm.id });
+    await knex('user_management.role_permissions').insert({ role_id: guestRole.id, permission_id: perm.id });
+  }
+}

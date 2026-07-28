@@ -4,6 +4,7 @@ import { createPool } from '../config/database.js';
 import { buildSchema } from '../graphql/schema.js';
 import { transactionPlugin } from '../plugins/transaction.js';
 import authRouter from '../routes/auth.js';
+import adminRouter from '../routes/admin.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 export async function createApp() {
@@ -16,8 +17,10 @@ export async function createApp() {
   });
 
   const pgPool = createPool();
+  app.set('pgPool', pgPool);
 
   app.use('/auth', authRouter);
+  app.use('/admin', adminRouter);
 
   const schema = await buildSchema(pgPool);
 
