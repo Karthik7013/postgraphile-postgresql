@@ -49,11 +49,10 @@ You can access the deployed GraphQL Playground here:
 
 4. **Database Migrations**
 
-   Run migrations to create auth tables and enable RLS:
+   Run migrations with Knex:
 
    ```bash
-   psql "$CONNECTION_STRING" -f migrations/001_create_auth_tables.sql
-   psql "$CONNECTION_STRING" -f migrations/002_enable_rls.sql
+   npm run migrate:latest
    ```
 
 ## Running the Server
