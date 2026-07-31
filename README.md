@@ -1,53 +1,111 @@
-# PostGraphile Express Server
+# LMS API
 
-This project implements a GraphQL API using Express, Apollo Server, and PostGraphile. It automatically generates a GraphQL schema based on your PostgreSQL database schema and serves it via Apollo Server.
+Apollo Server + PostGraphile GraphQL API for the learning platform.
 
- 🟢 Live Demo
+## Stack
 
-You can access the deployed GraphQL Playground here:  
-[https://postgraphile-postgresql.onrender.com/graphql](https://postgraphile-postgresql.onrender.com/graphql)
+- **Apollo Server 4** — GraphQL server with Apollo Sandbox
+- **PostGraphile 4** — auto-generates GraphQL types from PostgreSQL
+- **Express** — HTTP server
+- **PostgreSQL** — remote Aiven database
+- **Merged Schema** — PostGraphile types + custom domain resolvers stitched together
 
-## Features
+## Project Structure
 
-- **Automatic Schema Generation**: Uses `postgraphile` to create a GraphQL schema from a PostgreSQL database.
-- **Apollo Server Integration**: Runs the schema within `apollo-server-express` for a robust GraphQL server experience.
-- **Transaction Management**: Implements a transactional workflow where every request runs inside a PostgreSQL transaction.
-  - `BEGIN` on request start.
-  - `COMMIT` on success.
-  - `ROLLBACK` if errors occur.
-- **Secure Database Connection**: Configured to connect to the database using SSL with a custom CA certificate.
-
-## Prerequisites
-
-- Node.js
-- PostgreSQL Database
-
-## Setup
-
-1. **Install Dependencies**
-
-   ```bash
-   npm install
-   ```
-
-2. **Environment Configuration**
-
-   Create a `.env` file in the root directory containing your database connection string:
-
-   ```env
-   CONNECTION_STRING=postgres://username:password@hostname:port/dbname
-   ```
-
-3. **SSL Certificate**
-
-   Ensure you have a `CA.pem` file in the root directory. This file is required by the application to establish a secure SSL connection to your PostgreSQL instance.
-
-## Running the Server
-
-Start the application:
-
-```bash
-node index.js
+```
+src/
+├── index.js                        # Entry — Express, Apollo, health check
+├── config/
+│   └── database.js                 # PG pool with SSL support
+├── graphql/
+│   ├── schema.js                   # Builds PostGraphile + merges domain schemas
+│   ├── domains.js                  # Auto-discovers domain folders
+│   └── auth/                       # Domain: authentication
+│       ├── typeDefs.js             # GraphQL SDL strings
+│       ├── resolvers.js            # Resolver functions
+│       └── index.js                # Re-exports { typeDefs, resolvers }
+└── services/
+    ├── auth.js                     # Auth business logic (signup, login, JWT)
+    └── email.js                    # Email sending (verification, notifications)
 ```
 
-The server will start locally on port 5000. You can access the endpoint at http://localhost:5000/graphql.
+### Adding a new domain
+
+Create a folder under `graphql/` with the same three-file pattern:
+
+```
+graphql/courses/
+├── typeDefs.js
+├── resolvers.js
+└── index.js
+```
+
+The `domains.js` auto-discovers it — no registration needed.
+
+## Quick Commands
+
+```bash
+npm run dev      # Start dev server with nodemon (auto-restart on changes)
+npm start        # Start production server
+```
+
+## Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/graphql` | Merged GraphQL (PostGraphile DB types + custom mutations) |
+| `/health` | Health check — returns `{ status: "OK", timestamp: "..." }` |
+
+Open `http://localhost:4000/graphql` in a browser for the **Apollo Sandbox** explorer.
+
+## Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NODE_ENV` | No | `production` | Environment name |
+| `PORT` | No | `4000` | HTTP server port |
+| `DB_HOST` | Yes | — | PostgreSQL host |
+| `DB_USER` | Yes | — | Database user |
+| `DB_PASSWORD` | Yes | — | Database password |
+| `DB_NAME` | Yes | — | Database name |
+| `DB_PORT` | No | `5432` | Database port |
+| `DB_SSL` | No | `false` | Enable SSL (`true`/`false`) |
+| `DB_SSL_CA_PATH` | No | — | Path to CA certificate file |
+| `DB_SSL_REJECT_UNAUTHORIZED` | No | `true` | SSL rejection on/off |
+| `JWT_SECRET` | For auth | — | JWT signing secret |
+| `JWT_EXPIRES_IN` | No | `7d` | Token expiry duration |
+| `STRIPE_SECRET_KEY` | For payments | — | Stripe API key |
+| `EMAIL_HOST` | For email | — | SMTP host |
+| `EMAIL_PORT` | No | `587` | SMTP port |
+| `EMAIL_SECURE` | No | `false` | SMTP SSL on/off |
+| `EMAIL_USER` | For email | — | SMTP username |
+| `EMAIL_PASS` | For email | — | SMTP password |
+| `EMAIL_FROM` | No | `LMS <noreply@example.com>` | Sender address |
+
+## Schema Merging
+
+The API uses a merged schema approach:
+
+1. **PostGraphile** introspects the `auth` database schema and generates Query/Mutation/types automatically
+2. **Custom domains** (`auth/`, etc.) define additional typeDefs and resolvers
+3. Both are stitched together via `@graphql-tools/schema` `makeExecutableSchema`
+
+## Dependencies
+
+- `@apollo/server` — Apollo Server 4
+- `postgraphile` — PostGraphile (auto-generates GraphQL from DB)
+- `@graphile-contrib/pg-simplify-inflector` — Cleaner type naming
+- `@graphql-tools/schema` — Schema merging
+- `pg` — PostgreSQL client
+- `bcrypt` — Password hashing
+- `jsonwebtoken` — JWT tokens
+- `nodemailer` — Email sending
+- `stripe` — Payment processing
+- `dotenv` — Environment config
+- `cors`, `express` — HTTP layer
